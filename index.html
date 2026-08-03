@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>helixxxxx</title>
+<meta name="description" content="Personal site — projects, notes, photos.">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0b0d10; }
+  body {
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    -webkit-font-smoothing: antialiased;
+    color: #a8b1ba;
+  }
+  ::selection { background: #2b323a; color: #e9edf1; }
+  .scroll { scrollbar-width: thin; scrollbar-color: #262c34 transparent; }
+  .scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll::-webkit-scrollbar-thumb { background: #262c34; border-radius: 4px; }
+  .scroll::-webkit-scrollbar-track { background: transparent; }
+
+  /* ---------- shell ---------- */
+  .app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .titlebar {
+    flex: none; height: 36px; border-bottom: 1px solid #1e2228; background: #0e1216;
+    display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    font-size: 11px; color: #4e565f;
+  }
+  .titlebar .path { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .menu-btn {
+    display: none; background: none; border: 1px solid #1e2228; color: #8b939c;
+    font: inherit; font-size: 11px; padding: 3px 8px; border-radius: 3px; cursor: pointer;
+  }
+  .menu-btn:hover { color: #e9edf1; border-color: #2f373f; }
+
+  .body { flex: 1; display: flex; min-height: 0; }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    width: 232px; flex: none; border-right: 1px solid #1e2228; background: #0e1216;
+    display: flex; flex-direction: column; padding: 20px 0;
+  }
+  .tree { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
+  .row {
+    flex: none; padding: 7px 20px; font-size: 12.5px; line-height: 1.5;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    background: none; border: none; font-family: inherit; text-align: left;
+  }
+  .row.dir { color: #6b757f; cursor: default; }
+  .row.file { color: #8b939c; cursor: pointer; }
+  .row.file:hover { color: #d6dae0; }
+  .row.on { color: #e9edf1; }
+  .row.d1 { padding-left: 36px; }
+  .sidefoot {
+    flex: none; padding: 14px 20px 0; margin-top: 14px; border-top: 1px solid #1e2228;
+    display: flex; flex-direction: column; gap: 5px; font-size: 11px;
+  }
+  .sidefoot a { color: #8b939c; text-decoration: none; }
+  .sidefoot a:hover { color: #e9edf1; }
+
+  /* ---------- main ---------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .tabbar { flex: none; display: flex; border-bottom: 1px solid #1e2228; overflow-x: auto; overflow-y: hidden; }
+  .tabbar::-webkit-scrollbar { height: 0; }
+  .tab {
+    display: flex; gap: 10px; align-items: center; padding: 11px 15px;
+    font-size: 12px; border-right: 1px solid #1e2228; color: #4e565f; white-space: nowrap;
+  }
+  .tab.on { background: #12161b; color: #d6dae0; }
+  .tab .name { cursor: pointer; }
+  .tab .x { color: #3d454d; cursor: pointer; }
+  .tab .x:hover { color: #d6dae0; }
+
+  .page { flex: 1; min-height: 0; overflow-y: auto; padding: 40px 52px 44px; display: flex; flex-direction: column; }
+  .meta { font-size: 11px; color: #4e565f; }
+
+  h1.h1 {
+    font-family: Helvetica, Arial, sans-serif; font-size: 32px; line-height: 1.2;
+    letter-spacing: -0.02em; color: #e9edf1; margin-top: 16px; max-width: 24ch; text-wrap: pretty;
+    font-weight: 600;
+  }
+  h2.h2 { font-size: 11.5px; letter-spacing: 0.14em; color: #6b757f; margin-top: 38px; font-weight: 400; }
+  p.p {
+    font-family: Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.75;
+    color: #a8b1ba; margin-top: 18px; max-width: 54ch; text-wrap: pretty;
+  }
+  .li {
+    display: flex; gap: 14px; margin-top: 11px;
+    font-family: Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #a8b1ba;
+  }
+  .li .bullet {
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px; color: #4e565f;
+    padding-top: 3px; flex: none;
+  }
+  .li .txt { max-width: 48ch; text-wrap: pretty; }
+  .li a, a.inline {
+    color: #e9edf1; text-decoration: none; cursor: pointer;
+    border-bottom: 1px solid #2f373f;
+  }
+  .li a:hover, a.inline:hover { border-color: #aeb6bf; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.85em;
+    background: #12161b; border: 1px solid #1e2228; border-radius: 3px; padding: 1px 5px; color: #d6dae0;
+  }
+  .pagefoot { margin-top: auto; padding-top: 40px; font-size: 12px; }
+  .pagefoot button {
+    background: none; border: none; font: inherit; color: #aeb6bf; cursor: pointer; padding: 0;
+  }
+  .pagefoot button:hover { color: #e9edf1; }
+
+  /* ---------- photos ---------- */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 34px 30px; margin-top: 26px; max-width: 880px; }
+  .card { display: flex; flex-direction: column; gap: 10px; cursor: pointer; }
+  .frame {
+    position: relative; width: 100%; aspect-ratio: 3 / 2;
+    border: 1px solid #1e2228; background: #0e1216; overflow: hidden;
+  }
+  .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .frame.big { max-width: 820px; margin-top: 20px; }
+  .frame.big img { object-fit: contain; }
+  .empty {
+    position: absolute; inset: 8px; border: 1px dashed #262c34;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 11px; color: #4e565f; padding: 10px; line-height: 1.6;
+  }
+  .caption { display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px; color: #8b939c; }
+  .caption .date { color: #4e565f; }
+  .phototitle { font-family: Helvetica, Arial, sans-serif; font-size: 20px; color: #e9edf1; margin-top: 20px; }
+  .photonote {
+    font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7;
+    color: #8b939c; margin-top: 8px; max-width: 52ch; text-wrap: pretty;
+  }
+  .nav { display: flex; gap: 22px; margin-top: 30px; font-size: 12px; }
+  .nav button { background: none; border: none; font: inherit; color: #aeb6bf; cursor: pointer; padding: 0; }
+  .nav button:hover { color: #e9edf1; }
+
+  /* ---------- mobile ---------- */
+  .scrim { display: none; }
+  @media (max-width: 720px) {
+    .menu-btn { display: block; }
+    .sidebar {
+      position: fixed; top: 36px; bottom: 0; left: 0; z-index: 20;
+      transform: translateX(-100%); transition: transform .18s ease;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .scrim.on {
+      display: block; position: fixed; inset: 36px 0 0 0; z-index: 10; background: rgba(0,0,0,.5);
+    }
+    .page { padding: 28px 22px 36px; }
+    .grid { grid-template-columns: 1fr; gap: 26px; }
+    h1.h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="titlebar">
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle file tree">files</button>
+    <div class="path" id="titlePath"></div>
+  </div>
+
+  <div class="body">
+    <div class="scrim" id="scrim"></div>
+
+    <nav class="sidebar scroll" id="sidebar">
+      <div class="tree" id="tree"></div>
+      <div class="sidefoot" id="sidefoot"></div>
+    </nav>
+
+    <div class="main">
+      <div class="tabbar" id="tabbar"></div>
+      <div class="page scroll" id="page"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   EDIT EVERYTHING BELOW. Nothing above this line needs to change.
+   ========================================================================= */
+
+/* --- 1. Who you are (shows in the title bar + sidebar footer) ------------- */
+const SITE = {
+  handle: 'helixxxxx',
+  links: [
+    { label: 'email',  href: 'mailto:hirunahasthika@gmail.com' },
+    { label: 'github', href: 'https://github.com/helixxxxx' },
+    { label: 'passant', href: 'https://helixxxxx.github.io/Passant/' }
+  ]
+};
+
+/* --- 2. Photos ------------------------------------------------------------
+   Put your 3 image files in the images/ folder next to this index.html,
+   named exactly as the `src` below. Change titles/notes/dates freely.
+   To add a 4th photo, copy a block and add a matching row to TREE.        */
+const PHOTOS = [
+  {
+    src: 'images/01.jpg',
+    file: '01.jpg',
+    title: 'Photo one',
+    date: '2026-08-03',
+    place: '',
+    note: 'Replace this caption. Drop your file at images/01.jpg.'
+  },
+  {
+    src: 'images/02.jpg',
+    file: '02.jpg',
+    title: 'Photo two',
+    date: '2026-08-03',
+    place: '',
+    note: 'Replace this caption. Drop your file at images/02.jpg.'
+  },
+  {
+    src: 'images/03.jpg',
+    file: '03.jpg',
+    title: 'Photo three',
+    date: '2026-08-03',
+    place: '',
+    note: 'Replace this caption. Drop your file at images/03.jpg.'
+  }
+];
+
+/* --- 3. Pages -------------------------------------------------------------
+   Plain markdown-ish. Supported per line:
+     # Heading          -> big title
+     ## Section         -> small caps label
+     - item             -> dash bullet
+     1. item            -> numbered bullet (01, 02, ...)
+     [text](page.md)    -> link to another page here
+     [text](https://..) -> external link (opens in a new tab)
+     `code`             -> inline code
+     anything else      -> paragraph
+   Front matter between --- lines sets the date/tags line at the top.      */
+const FILES = {
+
+'about.md': `---
+date: 2026-08-03
+---
+# helixxxxx
+
+TODO — two or three sentences about you. What you build, where you are, what you
+are into. Keep it short; the projects do the talking.
+
+## Projects
+- [Passant](projects/passant.md)
+
+## Elsewhere
+- [github](https://github.com/helixxxxx)
+- [photos](photos/)
+- [now](now.md)
+`,
+
+'projects/passant.md': `---
+date: 2026-08-03
+tags: [android, chess, kotlin]
+---
+# Passant
+
+A chess app you play from your home screen. The widget is not a shortcut to the
+app — it is the board. You tap a piece, you tap a square, the move goes out. The
+app itself is the companion: start games, track whose turn it is, review what
+happened.
+
+## Why
+Correspondence chess dies in the gap between moves. You open an app, you play,
+you close it, and then you forget the game exists for two days. Putting a live
+board on the home screen removes that gap entirely — your move is just there,
+next to the weather.
+
+It also refuses to look like a chess app. No wood board, no green-and-cream, none
+of the conventions everyone copied from the same two websites.
+
+## Three widgets
+- Board View — the main one, a full board you can play from
+- List View — every game you have going, one row each, whose turn it is
+- Bar View — a compact strip for when the home screen is already full
+
+## What it does
+- Online games against friends, with match invites and push notifications
+- Offline games against a bundled Stockfish engine
+- Live rated games on Lichess, played from inside Passant while your opponent
+  plays on lichess.org normally
+- Head-to-head history — a running win/loss/draw record against each opponent
+- Whole-app light and dark themes that follow the system
+
+## Fair play
+Online moves are refereed on the server. A chess engine runs in a Cloud Function,
+replays the move you just made, and reverts it if it was never legal — so the
+board cannot be edited by a modified client. It is a detect-and-revert design
+rather than a validate-then-write one, because correspondence chess is sporadic
+and nobody should wait on a cold start to move a pawn.
+
+## Built with
+- Kotlin, Jetpack Compose, Glance for the widgets
+- Firebase — Firestore, Cloud Functions, Cloud Messaging
+- Stockfish for the offline bot, Lichess Board API for live play
+
+## Status
+In closed testing on Google Play. Version 2.10.
+
+- [Privacy policy](https://helixxxxx.github.io/Passant/)
+`,
+
+'now.md': `---
+date: 2026-08-03
+---
+# Now
+
+TODO — what you are actually doing this month. This page is the easiest one to
+keep alive because it is allowed to be short and out of date.
+
+## Building
+- TODO
+- TODO
+
+## Learning
+- TODO
+
+## Not doing
+- TODO — the things you have decided to stop. This is usually the interesting half.
+`,
+
+'writing/colophon.md': `---
+date: 2026-08-03
+tags: [web]
+---
+# How this site works
+
+One HTML file. No build step, no framework, no fonts loaded from anywhere, no
+analytics. The file you are reading is the file I edit.
+
+## Adding a page
+1. Open \`index.html\` and find the \`FILES\` object
+2. Add a new entry, e.g. \`'writing/thing.md'\`, with markdown-ish text inside backticks
+3. Add a matching row to \`TREE\` so it shows in the sidebar
+4. Commit. GitHub Pages redeploys in about a minute.
+
+## Adding a photo
+1. Drop the image in \`images/\`
+2. Add a block to the \`PHOTOS\` array with its filename
+3. Add a \`photo\` row to \`TREE\`
+
+## Why it is like this
+Every site I have rebuilt in a framework ended up slower and said less. This one
+loads in one request and will still open in five years, which is the only
+feature I actually care about.
+`,
+
+'links.md': `---
+date: 2026-08-03
+---
+# Links
+
+TODO — things worth sending someone. Tools you actually use, sites you read,
+one-off pages you keep coming back to. Delete the headings that do not fit.
+
+## Tools
+- TODO
+
+## Reading
+- TODO
+
+## Reachable
+- [github](https://github.com/helixxxxx)
+- [email](mailto:hirunahasthika@gmail.com)
+`
+
+};
+
+/* --- 4. Sidebar tree ------------------------------------------------------
+   kind: 'dir' (label only) | 'file' (a key from FILES) | 'photo' (index into PHOTOS)
+   depth: 0 = top level, 1 = indented under a dir                          */
+const SHEET = 'photos/';
+const TREE = [
+  { kind: 'file', path: 'about.md',                depth: 0 },
+  { kind: 'dir',  label: 'projects/',              depth: 0 },
+  { kind: 'file', path: 'projects/passant.md',     depth: 1 },
+  { kind: 'dir',  label: 'writing/',               depth: 0 },
+  { kind: 'file', path: 'writing/colophon.md',     depth: 1 },
+  { kind: 'dir',  label: 'photos/', path: SHEET,   depth: 0 },
+  { kind: 'photo', idx: 0,                         depth: 1 },
+  { kind: 'photo', idx: 1,                         depth: 1 },
+  { kind: 'photo', idx: 2,                         depth: 1 },
+  { kind: 'file', path: 'now.md',                  depth: 0 },
+  { kind: 'file', path: 'links.md',                depth: 0 }
+];
+
+/* Order used by the "← previous page" link at the bottom of each page. */
+const ORDER = ['about.md', 'projects/passant.md', 'writing/colophon.md', 'now.md', 'links.md'];
+
+/* ============================================================================
+   ENGINE — you should not need to touch anything below.
+   ========================================================================= */
+
+const HOME = 'about.md';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+let state = { tabs: [HOME], active: HOME };
+
+const photoPath = (p) => SHEET + p.file;
+const isPhoto = (p) => p !== SHEET && p.indexOf(SHEET) === 0;
+const photoAt = (p) => PHOTOS.find(x => photoPath(x) === p);
+const exists = (p) => p === SHEET || !!FILES[p] || !!photoAt(p);
+
+/* ---- routing ---- */
+function open(path, push) {
+  if (!exists(path)) return;
+  if (!state.tabs.includes(path)) state.tabs.push(path);
+  state.active = path;
+  if (push !== false) location.hash = '#' + path;
+  closeMenu();
+  render();
+}
+
+function closeTab(path, ev) {
+  if (ev) ev.stopPropagation();
+  state.tabs = state.tabs.filter(t => t !== path);
+  if (!state.tabs.length) state.tabs = [HOME];
+  if (state.active === path) {
+    state.active = state.tabs[state.tabs.length - 1];
+    location.hash = '#' + state.active;
+  }
+  render();
+}
+
+function fromHash() {
+  const h = decodeURIComponent(location.hash.replace(/^#/, ''));
+  return exists(h) ? h : HOME;
+}
+
+/* ---- markdown-ish ---- */
+function parse(src) {
+  const lines = src.split('\n');
+  const meta = {};
+  const body = [];
+  let front = false;
+  lines.forEach((l, i) => {
+    if (i === 0 && l === '---') { front = true; return; }
+    if (front && l === '---') { front = false; return; }
+    if (front) { const k = l.indexOf(':'); if (k > 0) meta[l.slice(0, k).trim()] = l.slice(k + 1).trim(); return; }
+    body.push(l);
+  });
+  return { meta, body };
+}
+
+/* inline: `code` and [text](href) inside running text */
+function inline(text) {
+  let out = esc(text);
+  out = out.replace(/`([^`]+)`/g, (m, c) => '<code>' + c + '</code>');
+  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) => {
+    if (/^(https?:|mailto:)/.test(href)) {
+      return '<a class="inline" href="' + href + '" target="_blank" rel="noopener">' + label + '</a>';
+    }
+    return '<a class="inline" href="#' + href + '">' + label + '</a>';
+  });
+  return out;
+}
+
+function blocksFor(path) {
+  const out = [];
+  let n = 0;
+  const para = [];
+  const flush = () => {
+    if (!para.length) return;
+    out.push({ t: 'p', text: para.join(' ') });
+    para.length = 0;
+  };
+  parse(FILES[path]).body.forEach(raw => {
+    const l = raw.trim();
+    if (!l) { flush(); return; }
+    if (l.indexOf('# ') === 0)  { flush(); out.push({ t: 'h1', text: l.slice(2) }); n = 0; return; }
+    if (l.indexOf('## ') === 0) { flush(); out.push({ t: 'h2', text: l.slice(3).toUpperCase() }); n = 0; return; }
+    const numbered = /^\d+\.\s/.test(l);
+    if (l.indexOf('- ') === 0 || numbered) {
+      flush();
+      n += 1;
+      const bullet = numbered ? String(n).padStart(2, '0') : '—';
+      const text = l.replace(/^-\s+/, '').replace(/^\d+\.\s+/, '');
+      out.push({ t: 'li', bullet, text });
+      return;
+    }
+    para.push(l);
+  });
+  flush();
+  return out;
+}
+
+/* ---- render ---- */
+function frame(p, big) {
+  const cls = 'frame' + (big ? ' big' : '');
+  return '<div class="' + cls + '">' +
+    '<img src="' + p.src + '" alt="' + esc(p.title) + '" loading="lazy" ' +
+    'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+    '<div class="empty" style="display:none">' + esc(p.src) + '<br>not found — add the file</div>' +
+    '</div>';
+}
+
+function renderTree() {
+  const host = $('tree');
+  host.innerHTML = '';
+  TREE.forEach(row => {
+    const isP = row.kind === 'photo';
+    const path = isP ? photoPath(PHOTOS[row.idx]) : row.path;
+    const label = row.kind === 'dir' ? row.label
+      : (isP ? PHOTOS[row.idx].file : row.path.split('/').pop());
+    const el = document.createElement(path ? 'button' : 'div');
+    el.className = 'row d' + row.depth + ' ' +
+      (row.kind === 'dir' && !row.path ? 'dir' : 'file') +
+      (path === state.active ? ' on' : '');
+    el.textContent = label;
+    if (path) el.onclick = () => open(path);
+    host.appendChild(el);
+  });
+
+  $('sidefoot').innerHTML = SITE.links
+    .map(l => '<a href="' + l.href + '"' +
+      (/^https?:/.test(l.href) ? ' target="_blank" rel="noopener"' : '') +
+      '>' + esc(l.label) + '</a>').join('');
+}
+
+function renderTabs() {
+  const host = $('tabbar');
+  host.innerHTML = '';
+  state.tabs.forEach(t => {
+    const p = photoAt(t);
+    const label = t === SHEET ? 'photos/' : (p ? p.file : t.split('/').pop());
+    const el = document.createElement('div');
+    el.className = 'tab' + (t === state.active ? ' on' : '');
+    el.innerHTML = '<span class="name"></span><span class="x">&times;</span>';
+    el.querySelector('.name').textContent = label;
+    el.querySelector('.name').onclick = () => open(t);
+    el.querySelector('.x').onclick = (e) => closeTab(t, e);
+    host.appendChild(el);
+  });
+}
+
+function renderPage() {
+  const host = $('page');
+  const active = state.active;
+  host.scrollTop = 0;
+
+  /* photo sheet */
+  if (active === SHEET) {
+    host.innerHTML =
+      '<div class="meta">' + PHOTOS.length + ' frames · newest first</div>' +
+      '<div class="grid">' + PHOTOS.map((p, i) =>
+        '<div class="card" data-i="' + i + '">' + frame(p, false) +
+        '<div class="caption"><span>' + esc(p.file) + '</span>' +
+        '<span class="date">' + esc(p.date) + '</span></div></div>'
+      ).join('') + '</div>';
+    host.querySelectorAll('.card').forEach(c => {
+      c.onclick = () => open(photoPath(PHOTOS[+c.dataset.i]));
+    });
+    return;
+  }
+
+  /* single photo */
+  const p = photoAt(active);
+  if (p) {
+    const i = PHOTOS.indexOf(p);
+    host.innerHTML =
+      '<div class="meta">' + [p.date, p.place].filter(Boolean).map(esc).join('  ·  ') + '</div>' +
+      frame(p, true) +
+      '<div class="phototitle">' + esc(p.title) + '</div>' +
+      '<div class="photonote">' + esc(p.note) + '</div>' +
+      '<div class="nav"><button data-d="-1">&larr; prev</button>' +
+      '<button data-d="1">next &rarr;</button></div>';
+    host.querySelectorAll('.nav button').forEach(b => {
+      b.onclick = () => open(photoPath(PHOTOS[(i + +b.dataset.d + PHOTOS.length) % PHOTOS.length]));
+    });
+    return;
+  }
+
+  /* markdown page */
+  const src = FILES[active] ? active : HOME;
+  const meta = parse(FILES[src]).meta;
+  const metaLine = [meta.date, meta.tags ? meta.tags.replace(/[\[\]]/g, '') : null]
+    .filter(Boolean).join('  ·  ');
+
+  let html = '<div class="meta">' + esc(metaLine) + '</div>';
+  blocksFor(src).forEach(b => {
+    if (b.t === 'h1') html += '<h1 class="h1">' + esc(b.text) + '</h1>';
+    else if (b.t === 'h2') html += '<h2 class="h2">' + esc(b.text) + '</h2>';
+    else if (b.t === 'p') html += '<p class="p">' + inline(b.text) + '</p>';
+    else if (b.t === 'li') html += '<div class="li"><span class="bullet">' + b.bullet +
+      '</span><span class="txt">' + inline(b.text) + '</span></div>';
+  });
+
+  const oi = ORDER.indexOf(src);
+  if (oi >= 0) {
+    const prev = ORDER[(oi - 1 + ORDER.length) % ORDER.length];
+    html += '<div class="pagefoot"><button data-go="' + prev + '">&larr; ' +
+      prev.split('/').pop() + '</button></div>';
+  }
+
+  host.innerHTML = html;
+  const back = host.querySelector('[data-go]');
+  if (back) back.onclick = () => open(back.dataset.go);
+}
+
+function render() {
+  $('titlePath').textContent = SITE.handle + ' / ' + (state.active === SHEET ? 'photos' : state.active);
+  document.title = state.active === HOME
+    ? SITE.handle
+    : SITE.handle + ' / ' + state.active.split('/').pop();
+  renderTree();
+  renderTabs();
+  renderPage();
+}
+
+/* ---- mobile menu ---- */
+function closeMenu() {
+  $('sidebar').classList.remove('open');
+  $('scrim').classList.remove('on');
+}
+$('menuBtn').onclick = () => {
+  $('sidebar').classList.toggle('open');
+  $('scrim').classList.toggle('on');
+};
+$('scrim').onclick = closeMenu;
+
+/* ---- boot ---- */
+window.addEventListener('hashchange', () => {
+  const h = fromHash();
+  if (h !== state.active) open(h, false);
+});
+
+state.active = fromHash();
+state.tabs = state.active === HOME ? [HOME] : [HOME, state.active];
+render();
+</script>
+</body>
+</html>
